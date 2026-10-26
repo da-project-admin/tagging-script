@@ -550,9 +550,9 @@
                 formSpecs['fueltype'] ||
                 formSpecs['fuel'] ||
                 formSpecs['fuel type'] ||
-                'Gasoline';
+                '';
 
-            var parsedFuel = normalizeFuelType(rawFuel, 'Gasoline');
+            var parsedFuel = normalizeFuelType(rawFuel, '');
 
             return {
                 status: formStatus,
@@ -1229,7 +1229,7 @@
                             ) ||
                             'Unknown',
 
-                        fuelType: normalizeFuelType(scrapedSpecs['fuel type'], 'Gasoline')
+                        fuelType: normalizeFuelType(scrapedSpecs['fuel type'], '')
                     };
 
                     dealerData.vehicleDetails =
@@ -1802,7 +1802,7 @@
                             $card.find('.spec-name-value.fuel_type .spec-value.fuel_type').first().attr('title') ||
                             '';
 
-                        var fuelType = normalizeFuelType(rawFuelType, 'Gasoline');
+                        var fuelType = normalizeFuelType(rawFuelType, '');
 
                         activeVehicleData = {
                             status:
