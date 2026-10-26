@@ -2375,6 +2375,13 @@
                         ) || ''
                     ).toLowerCase();
 
+                if (
+                    href.startsWith('tel:') ||
+                    href.startsWith('sms:')
+                ) {
+                    return;
+                }
+
                 var text =
                     $link
                         .text()
@@ -2397,7 +2404,7 @@
                     $link.hasClass(
                         'modal-link'
                     ) ||
-                    /(^|\\s)cf7-[^\\s]+/i.test(
+                    /(^|\s)cf7-[^\s]+/i.test(
                         className
                     );
 
