@@ -932,46 +932,134 @@
             dealerData.language;
 
         function getDynamicPageType() {
-            if (
-                jQuery(
-                    '.inventory-single-content'
-                ).length > 0
-            ) {
+            // Keep existing structural checks as the highest priority.
+            if (document.querySelector('.inventory-single-content')) {
                 return 'Vehicle Details';
             }
 
-            if (
-                jQuery(
-                    '#inventory-units-main-container'
-                ).length > 0
-            ) {
+            if (document.querySelector('#inventory-units-main-container')) {
                 return 'Vehicle Listing';
             }
 
-            if (
-                jQuery(
-                    '.error404-content'
-                ).length > 0
-            ) {
+            if (document.querySelector('.error404-content, body.error404')) {
                 return 'Page Not Found';
             }
 
-            var checkForDataAttribute =
-                jQuery(
-                    '[page-type]'
-                )
-                    .first()
-                    .attr(
-                        'page-type'
-                    );
+            // An explicitly configured page type always wins over automatic inference.
+            var explicitType = jQuery('[page-type]').first().attr('page-type');
+            if (explicitType && explicitType.trim()) {
+                return explicitType.trim();
+            }
 
-            if (
-                !checkForDataAttribute
-            ) {
+            var path = window.location.pathname || '/';
+            if (path === '/' || path === '') {
+                return 'Home';
+            }
+
+            // Confirmation pages are not the form/page they came from.
+            if (/^\/(?:success|thank[-_]?you|confirmation)(?:[-_/]|$)/i.test(path)) {
                 return 'Other';
             }
 
-            return checkForDataAttribute;
+            function normalize(value) {
+                value = String(value || '');
+                try {
+                    value = decodeURIComponent(value);
+                } catch (e) {
+                    // Malformed URL encoding: proceed with the original string.
+                }
+                return value.toLowerCase()
+                    .replace(/&/g, ' and ')
+                    .replace(/[^a-z0-9]+/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            }
+
+            var urlText = normalize(path);
+            var heading = document.querySelector('main h1, #main h1, #content h1, h1');
+            var headingText = normalize(heading ? heading.textContent : '');
+
+            // If there is no H1, the document title is a limited content fallback.
+            if (!headingText) {
+                headingText = normalize((document.title || '').split('|')[0]);
+            }
+
+            function matchRules(rules, text) {
+                if (!text) return '';
+                for (var i = 0; i < rules.length; i++) {
+                    if (rules[i][1].test(text)) return rules[i][0];
+                }
+                return '';
+            }
+
+            // Specific types first: these must not be swallowed by generic
+            // matches such as Service, Finance, Parts or Specials.
+            var specificRules = [
+                ['Page Not Found', /^(404|page not found)$/],
+                ['Payment Estimator', /\b(payment estimator|payment calculator|monthly payment calculator|what can i afford|affordability calculator)\b/],
+                ['Service Credit Card', /\bservice (credit card|card financing)\b/],
+                ['Service Xpress', /\b(service xpress|express service|quick service)\b/],
+                ['Service Event', /\bservice (event|clinic|open house)\b/],
+                ['Service Specials', /\b(service|maintenance|repair) (specials|offers|coupons|promotions)\b/],
+                ['Parts Specials', /\bparts (specials|offers|coupons|promotions)\b/],
+                ['Parts Order Form', /\b(order parts|parts order|parts request|request parts)\b/],
+                ['Schedule Service', /\b(schedule|book|request) (a )?(service|maintenance|repair|appointment)\b|\bservice (appointment|booking|request|scheduler)\b/],
+                ['Maintenance Menu', /\b(maintenance (menu|schedule)|scheduled maintenance)\b/],
+                ['Service Menu', /\bservice (menu|pricing|price list)\b/],
+                ['Finance Prequalification', /\b(pre qualif(?:y|ication)|pre approval|pre approved|credit pre approval|finance prequal)\b/],
+                ['OEM Incentives', /\b(oem|manufacturer|factory) (incentives|offers|rebates|specials|promotions)\b|\bincentives\b/],
+                ['Dealer Specials', /\b(dealer specials|sales specials|vehicle specials|inventory specials|special offers|promotions|current offers)\b/],
+                ['Tire Finder', /\b(tire|tyre) (finder|search|selector)\b/],
+                ['Tire Store', /\b(tire|tyre) (store|shop|center|centre)\b/],
+                ['CPOV Program', /\b(certified pre owned|certified preowned|cpov|certified used) (program|vehicles|inventory)?\b/],
+                ['Model Showroom', /\b(model showroom|model lineup|model line up|explore models|all models)\b/],
+                ['Test Drive', /\b(test drive|test ride|schedule a ride|book a ride|demo ride)\b/],
+                ['Trade In', /\b(trade in|trade value|trade appraisal|value your trade|value my trade|sell your vehicle)\b/],
+                ['Hours & Directions', /\b(hours and directions|hours directions|directions and hours|store hours|dealership hours|find us|get directions|our location|directions)\b/],
+                ['Competitive Advantage', /\b(why buy from us|why choose us|why buy here|our advantage|competitive advantage)\b/],
+                ['Business Elite', /\bbusiness elite\b/],
+                ['OnStar', /\bonstar\b/],
+                ['DriverGear', /\bdriver ?gear\b/],
+                ['Brochure', /\b(brochure|e brochure|download catalog|download catalogue)\b/],
+                ['Finance', /\b(finance application|financing application|apply for financing|apply for credit|finance center|financing center)\b/],
+                ['Vehicle Details', /\b(vehicle details|unit details|inventory details)\b/],
+                ['Vehicle Listing', /\b(new inventory|used inventory|pre owned inventory|all inventory|inventory search|view inventory|search inventory|vehicles for sale|units for sale)\b/],
+                ['Contact Us', /\b(contact us|contact the dealer|contact dealership|get in touch)\b/],
+                ['About Us', /\b(about us|our dealership|meet our team|our story|who we are)\b/],
+                ['Blog', /\b(blog|news and insights|news articles|latest news)\b/],
+                ['Accessories Home', /\baccessories home\b/],
+                ['Service Home', /\bservice home\b/],
+                ['Parts Home', /\bparts home\b/],
+                ['Custom Dealer Content', /\b(video gallery|warranty (and )?recall|recall lookup|recall look up)\b/]
+            ];
+
+            // The URL normally provides the strongest evidence.
+            var detected = matchRules(specificRules, urlText);
+            if (detected) return detected;
+
+            // Page title can distinguish generic or custom URLs.
+            detected = matchRules(specificRules, headingText);
+            if (detected) return detected;
+
+            var genericRules = [
+                ['Showroom', /\bshowroom\b/],
+                ['Vehicle Listing', /\binventory\b/],
+                ['Finance', /\b(finance|financing|payment options)\b/],
+                ['Service', /\b(service|repairs|repair center|maintenance)\b/],
+                ['Parts', /\bparts\b/],
+                ['Accessories', /\baccessories\b/],
+                ['Dealer Specials', /\b(specials|offers|coupons)\b/],
+                ['Contact Us', /\bcontact\b/],
+                ['About Us', /\babout\b/],
+                ['Blog', /\b(news|articles)\b/]
+            ];
+
+            detected = matchRules(genericRules, urlText);
+            if (detected) return detected;
+
+            // Generic headings are considered only if the URL is inconclusive.
+            detected = matchRules(genericRules, headingText);
+            return detected || 'Other';
         }
 
         var dynamicPageType =
