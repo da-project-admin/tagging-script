@@ -86,7 +86,8 @@
         "Massimo",
         "Segway",
         "Cub Cadet",
-        "John Deere"
+        "John Deere",
+        "Triumph"
     ];
 
     var noiseWords = [
