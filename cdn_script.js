@@ -28,6 +28,18 @@
         return dealer && typeof dealer === 'object' ? dealer : {};
     }
 
+    function normalizeFuelType(value, fallback) {
+        var original = String(value == null ? '' : value).trim();
+        var fuel = original.toLowerCase();
+
+        if (/^(h|hev|phev)$/.test(fuel) || /\bhybrid\b/.test(fuel)) return 'Hybrid';
+        if (fuel === 'd' || /\bdiesel\b/.test(fuel)) return 'Diesel';
+        if (/^(e|ev|bev)$/.test(fuel) || /\belectric\b|\bbattery[- ]?powered\b/.test(fuel)) return 'Electric';
+        if (fuel === 'g' || /\b(gas|gasoline|petrol|unleaded)\b/.test(fuel)) return 'Gasoline';
+
+        return fallback !== undefined ? fallback : original;
+    }
+
     var activeVehicleData = null;
     var formTypeCache = {};
 
@@ -493,31 +505,7 @@
                     vData.status
                 );
 
-            var f =
-                (vData.fuelType || '')
-                    .toLowerCase();
-
-            if (
-                f.indexOf('diesel') > -1
-            ) {
-                vData.fuelType =
-                    'Diesel';
-            } else if (
-                f.indexOf('electric') > -1
-            ) {
-                vData.fuelType =
-                    'Electric';
-            } else if (
-                f.indexOf('hybrid') > -1
-            ) {
-                vData.fuelType =
-                    'Hybrid';
-            } else if (
-                f.indexOf('gas') > -1
-            ) {
-                vData.fuelType =
-                    'Gasoline';
-            }
+            vData.fuelType = normalizeFuelType(vData.fuelType);
 
             return vData;
         }
@@ -564,37 +552,7 @@
                 formSpecs['fuel type'] ||
                 'Gasoline';
 
-            var parsedFuel =
-                'Gasoline';
-
-            if (
-                rawFuel
-                    .toLowerCase()
-                    .indexOf(
-                        'diesel'
-                    ) > -1
-            ) {
-                parsedFuel =
-                    'Diesel';
-            } else if (
-                rawFuel
-                    .toLowerCase()
-                    .indexOf(
-                        'electric'
-                    ) > -1
-            ) {
-                parsedFuel =
-                    'Electric';
-            } else if (
-                rawFuel
-                    .toLowerCase()
-                    .indexOf(
-                        'hybrid'
-                    ) > -1
-            ) {
-                parsedFuel =
-                    'Hybrid';
-            }
+            var parsedFuel = normalizeFuelType(rawFuel, 'Gasoline');
 
             return {
                 status: formStatus,
@@ -932,7 +890,6 @@
             dealerData.language;
 
         function getDynamicPageType() {
-            // Keep existing structural checks as the highest priority.
             if (document.querySelector('.inventory-single-content')) {
                 return 'Vehicle Details';
             }
@@ -945,7 +902,6 @@
                 return 'Page Not Found';
             }
 
-            // An explicitly configured page type always wins over automatic inference.
             var explicitType = jQuery('[page-type]').first().attr('page-type');
             if (explicitType && explicitType.trim()) {
                 return explicitType.trim();
@@ -956,7 +912,6 @@
                 return 'Home';
             }
 
-            // Confirmation pages are not the form/page they came from.
             if (/^\/(?:success|thank[-_]?you|confirmation)(?:[-_/]|$)/i.test(path)) {
                 return 'Other';
             }
@@ -966,7 +921,6 @@
                 try {
                     value = decodeURIComponent(value);
                 } catch (e) {
-                    // Malformed URL encoding: proceed with the original string.
                 }
                 return value.toLowerCase()
                     .replace(/&/g, ' and ')
@@ -979,7 +933,6 @@
             var heading = document.querySelector('main h1, #main h1, #content h1, h1');
             var headingText = normalize(heading ? heading.textContent : '');
 
-            // If there is no H1, the document title is a limited content fallback.
             if (!headingText) {
                 headingText = normalize((document.title || '').split('|')[0]);
             }
@@ -992,8 +945,6 @@
                 return '';
             }
 
-            // Specific types first: these must not be swallowed by generic
-            // matches such as Service, Finance, Parts or Specials.
             var specificRules = [
                 ['Page Not Found', /^(404|page not found)$/],
                 ['Payment Estimator', /\b(payment estimator|payment calculator|monthly payment calculator|what can i afford|affordability calculator)\b/],
@@ -1033,11 +984,9 @@
                 ['Custom Dealer Content', /\b(video gallery|warranty (and )?recall|recall lookup|recall look up)\b/]
             ];
 
-            // The URL normally provides the strongest evidence.
             var detected = matchRules(specificRules, urlText);
             if (detected) return detected;
 
-            // Page title can distinguish generic or custom URLs.
             detected = matchRules(specificRules, headingText);
             if (detected) return detected;
 
@@ -1057,7 +1006,6 @@
             detected = matchRules(genericRules, urlText);
             if (detected) return detected;
 
-            // Generic headings are considered only if the URL is inconclusive.
             detected = matchRules(genericRules, headingText);
             return detected || 'Other';
         }
@@ -1281,46 +1229,7 @@
                             ) ||
                             'Unknown',
 
-                        fuelType:
-                            (function () {
-                                var rawFuel =
-                                    scrapedSpecs[
-                                    'fuel type'
-                                    ] ||
-                                    'Gasoline';
-
-                                if (
-                                    rawFuel
-                                        .toLowerCase()
-                                        .includes(
-                                            'diesel'
-                                        )
-                                ) {
-                                    return 'Diesel';
-                                }
-
-                                if (
-                                    rawFuel
-                                        .toLowerCase()
-                                        .includes(
-                                            'electric'
-                                        )
-                                ) {
-                                    return 'Electric';
-                                }
-
-                                if (
-                                    rawFuel
-                                        .toLowerCase()
-                                        .includes(
-                                            'hybrid'
-                                        )
-                                ) {
-                                    return 'Hybrid';
-                                }
-
-                                return 'Gasoline';
-                            })()
+                        fuelType: normalizeFuelType(scrapedSpecs['fuel type'], 'Gasoline')
                     };
 
                     dealerData.vehicleDetails =
@@ -1889,42 +1798,11 @@
                             );
 
                         var rawFuelType =
-                            specs[
-                            'fuel type'
-                            ] ||
+                            specs['fuel type'] ||
+                            $card.find('.spec-name-value.fuel_type .spec-value.fuel_type').first().attr('title') ||
                             '';
 
-                        var fuelType =
-                            'Gasoline';
-
-                        if (
-                            rawFuelType
-                                .toLowerCase()
-                                .indexOf(
-                                    'diesel'
-                                ) > -1
-                        ) {
-                            fuelType =
-                                'Diesel';
-                        } else if (
-                            rawFuelType
-                                .toLowerCase()
-                                .indexOf(
-                                    'electric'
-                                ) > -1
-                        ) {
-                            fuelType =
-                                'Electric';
-                        } else if (
-                            rawFuelType
-                                .toLowerCase()
-                                .indexOf(
-                                    'hybrid'
-                                ) > -1
-                        ) {
-                            fuelType =
-                                'Hybrid';
-                        }
+                        var fuelType = normalizeFuelType(rawFuelType, 'Gasoline');
 
                         activeVehicleData = {
                             status:
