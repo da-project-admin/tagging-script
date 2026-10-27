@@ -1615,6 +1615,62 @@
                         }
                     }
 
+                    if (
+                        yearsVal !==
+                        'All' &&
+                        yearsVal.indexOf(
+                            '-'
+                        ) > -1
+                    ) {
+                        var yearParts =
+                            yearsVal.split(
+                                '-'
+                            );
+
+                        var startYear =
+                            parseInt(
+                                yearParts[0],
+                                10
+                            );
+
+                        var endYear =
+                            parseInt(
+                                yearParts[1],
+                                10
+                            );
+
+                        if (
+                            !isNaN(
+                                startYear
+                            ) &&
+                            !isNaN(
+                                endYear
+                            ) &&
+                            startYear <=
+                            endYear
+                        ) {
+                            var expandedYears =
+                                [];
+
+                            for (
+                                var y =
+                                    startYear;
+                                y <=
+                                endYear;
+                                y++
+                            ) {
+                                expandedYears.push(
+                                    y
+                                );
+                            }
+
+                            yearsVal =
+                                expandedYears.join(
+                                    '|'
+                                );
+                        }
+                    }
+
                     var yearsVal =
                         getRawParam(
                             'years'
@@ -1646,13 +1702,48 @@
                             minYearParam &&
                             maxYearParam
                         ) {
-                            yearsVal =
-                                minYearParam ===
-                                    maxYearParam
-                                    ? minYearParam
-                                    : minYearParam +
-                                    '-' +
-                                    maxYearParam;
+                            var minYear =
+                                parseInt(
+                                    minYearParam,
+                                    10
+                                );
+
+                            var maxYear =
+                                parseInt(
+                                    maxYearParam,
+                                    10
+                                );
+
+                            if (
+                                !isNaN(
+                                    minYear
+                                ) &&
+                                !isNaN(
+                                    maxYear
+                                ) &&
+                                minYear <=
+                                maxYear
+                            ) {
+                                var years =
+                                    [];
+
+                                for (
+                                    var year =
+                                        minYear;
+                                    year <=
+                                    maxYear;
+                                    year++
+                                ) {
+                                    years.push(
+                                        year
+                                    );
+                                }
+
+                                yearsVal =
+                                    years.join(
+                                        '|'
+                                    );
+                            }
                         }
                     }
 
