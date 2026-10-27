@@ -298,6 +298,9 @@
         "Parts"
     ];
 
+    var numericValuePattern = /[^0-9.]/g;
+    var whitespacePattern = /\s+/g;
+
     function getDynamicFormType() {
         var currentFormTypeDataAttribute = jQuery('[form-name]').last().attr('form-name');
         return currentFormTypeDataAttribute || 'Other';
@@ -341,12 +344,12 @@
                 driveTrain: extractedSpecs['driveTrain'] || '',
                 msrp: (
                     extractedSpecs['msrp']
-                        ? extractedSpecs['msrp'].replace(/[^0-9.]/g, '')
+                        ? extractedSpecs['msrp'].replace(numericValuePattern, '')
                         : ''
                 ) || '',
                 displayedPrice: (
                     extractedSpecs['displayedPrice']
-                        ? extractedSpecs['displayedPrice'].replace(/[^0-9.]/g, '')
+                        ? extractedSpecs['displayedPrice'].replace(numericValuePattern, '')
                         : ''
                 ) || '',
                 fuelType: extractedSpecs['fuelType'] || ''
@@ -612,7 +615,7 @@
                         ? formSpecs[
                             'msrp'
                         ].replace(
-                            /[^0-9.]/g,
+                            numericValuePattern,
                             ''
                         )
                         : ''
@@ -622,7 +625,7 @@
                         ? formSpecs[
                             'price'
                         ].replace(
-                            /[^0-9.]/g,
+                            numericValuePattern,
                             ''
                         )
                         : ''
@@ -906,9 +909,16 @@
                 return 'Page Not Found';
             }
 
-            var explicitType = jQuery('[page-type]').first().attr('page-type');
-            if (explicitType && explicitType.trim()) {
-                return explicitType.trim();
+            var explicitType =
+                (
+                    jQuery('[page-type]')
+                        .first()
+                        .attr('page-type') ||
+                    ''
+                ).trim();
+
+            if (explicitType) {
+                return explicitType;
             }
 
             var path = window.location.pathname || '/';
@@ -929,7 +939,7 @@
                 return value.toLowerCase()
                     .replace(/&/g, ' and ')
                     .replace(/[^a-z0-9]+/g, ' ')
-                    .replace(/\s+/g, ' ')
+                    .replace(whitespacePattern, ' ')
                     .trim();
             }
 
@@ -1200,7 +1210,7 @@
                                 ? scrapedSpecs[
                                     'msrp'
                                 ].replace(
-                                    /[^0-9.]/g,
+                                    numericValuePattern,
                                     ''
                                 )
                                 : 'Unknown'
@@ -1213,7 +1223,7 @@
                                 .last()
                                 .text()
                                 .replace(
-                                    /[^0-9.]/g,
+                                    numericValuePattern,
                                     ''
                                 )
                             ||
@@ -1223,7 +1233,7 @@
                                 .last()
                                 .text()
                                 .replace(
-                                    /[^0-9.]/g,
+                                    numericValuePattern,
                                     ''
                                 )
                             ||
@@ -1234,7 +1244,7 @@
                                     ? scrapedSpecs[
                                         'price'
                                     ].replace(
-                                        /[^0-9.]/g,
+                                        numericValuePattern,
                                         ''
                                     )
                                     : 'Unknown'
@@ -1624,6 +1634,66 @@
                         );
 
                     if (
+                        !yearsVal
+                    ) {
+                        var minYearParam =
+                            getRawParam(
+                                'min-year'
+                            ) ||
+                            getRawParam(
+                                'min_year'
+                            );
+
+                        var maxYearParam =
+                            getRawParam(
+                                'max-year'
+                            ) ||
+                            getRawParam(
+                                'max_year'
+                            );
+
+                        if (
+                            minYearParam &&
+                            maxYearParam
+                        ) {
+                            var minYear =
+                                parseInt(
+                                    minYearParam,
+                                    10
+                                );
+
+                            var maxYear =
+                                parseInt(
+                                    maxYearParam,
+                                    10
+                                );
+
+                            if (
+                                !isNaN(
+                                    minYear
+                                ) &&
+                                !isNaN(
+                                    maxYear
+                                ) &&
+                                minYear <=
+                                maxYear
+                            ) {
+                                yearsVal =
+                                    minYear +
+                                    '-' +
+                                    maxYear;
+                            }
+                        }
+                    }
+
+                    if (
+                        !yearsVal
+                    ) {
+                        yearsVal =
+                            'All';
+                    }
+
+                    if (
                         yearsVal !==
                         'All' &&
                         yearsVal.indexOf(
@@ -1677,81 +1747,6 @@
                                     '|'
                                 );
                         }
-                    }
-
-                    if (
-                        !yearsVal
-                    ) {
-                        var minYearParam =
-                            getRawParam(
-                                'min-year'
-                            ) ||
-                            getRawParam(
-                                'min_year'
-                            );
-
-                        var maxYearParam =
-                            getRawParam(
-                                'max-year'
-                            ) ||
-                            getRawParam(
-                                'max_year'
-                            );
-
-                        if (
-                            minYearParam &&
-                            maxYearParam
-                        ) {
-                            var minYear =
-                                parseInt(
-                                    minYearParam,
-                                    10
-                                );
-
-                            var maxYear =
-                                parseInt(
-                                    maxYearParam,
-                                    10
-                                );
-
-                            if (
-                                !isNaN(
-                                    minYear
-                                ) &&
-                                !isNaN(
-                                    maxYear
-                                ) &&
-                                minYear <=
-                                maxYear
-                            ) {
-                                var years =
-                                    [];
-
-                                for (
-                                    var year =
-                                        minYear;
-                                    year <=
-                                    maxYear;
-                                    year++
-                                ) {
-                                    years.push(
-                                        year
-                                    );
-                                }
-
-                                yearsVal =
-                                    years.join(
-                                        '|'
-                                    );
-                            }
-                        }
-                    }
-
-                    if (
-                        !yearsVal
-                    ) {
-                        yearsVal =
-                            'All';
                     }
 
                     function getConditionFromURL() {
@@ -1956,7 +1951,7 @@
                                 )
                                 .text()
                                 .replace(
-                                    /\s+/g,
+                                    whitespacePattern,
                                     ' '
                                 )
                                 .trim();
@@ -1968,7 +1963,7 @@
                                 )
                                 .text()
                                 .replace(
-                                    /\s+/g,
+                                    whitespacePattern,
                                     ' '
                                 )
                                 .trim();
@@ -2015,7 +2010,7 @@
                                 )
                                 .text()
                                 .replace(
-                                    /[^0-9.]/g,
+                                    numericValuePattern,
                                     ''
                                 ) ||
                             '';
@@ -2028,7 +2023,7 @@
                                 .first()
                                 .text()
                                 .replace(
-                                    /[^0-9.]/g,
+                                    numericValuePattern,
                                     ''
                                 ) ||
                             '';
@@ -2528,7 +2523,7 @@
                 {
                     typedSearchContent:
                         searchValue.replace(
-                            /\s+/g,
+                            whitespacePattern,
                             '|'
                         ),
 
