@@ -1215,7 +1215,18 @@
                                 .replace(
                                     /[^0-9.]/g,
                                     ''
-                                ) ||
+                                )
+                            || 
+                            jQuery(
+                                '.add-on-total .amount'
+                            )
+                                .last()
+                                .text()
+                                .replace(
+                                    /[^0-9.]/g,
+                                    ''
+                                )
+                            ||
                             (
                                 scrapedSpecs[
                                     'price'
