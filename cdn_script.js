@@ -1615,6 +1615,14 @@
                         }
                     }
 
+                    var yearsVal =
+                        getRawParam(
+                            'years'
+                        ) ||
+                        getRawParam(
+                            'year'
+                        );
+
                     if (
                         yearsVal !==
                         'All' &&
@@ -1670,14 +1678,6 @@
                                 );
                         }
                     }
-
-                    var yearsVal =
-                        getRawParam(
-                            'years'
-                        ) ||
-                        getRawParam(
-                            'year'
-                        );
 
                     if (
                         !yearsVal
