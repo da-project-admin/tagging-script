@@ -1213,7 +1213,7 @@
                                     /[^0-9.]/g,
                                     ''
                                 )
-                            || 
+                            ||
                             jQuery(
                                 '.add-on-total .amount'
                             )
@@ -2025,13 +2025,112 @@
 
         var delay = 400;
 
-        setTimeout(
+        var shownInPageForms =
+            new WeakSet();
+
+        var observer =
+            new IntersectionObserver(
+                function (
+                    entries
+                ) {
+                    entries.forEach(
+                        function (
+                            entry
+                        ) {
+                            if (
+                                !entry.isIntersecting ||
+                                entry.intersectionRatio <= 0
+                            ) {
+                                return;
+                            }
+
+                            if (
+                                shownInPageForms.has(
+                                    entry.target
+                                )
+                            ) {
+                                return;
+                            }
+
+                            var $form =
+                                jQuery(
+                                    entry.target
+                                );
+
+                            var displayType =
+                                getDisplayType(
+                                    entry.target
+                                );
+
+                            if (
+                                displayType !==
+                                'in-page'
+                            ) {
+                                return;
+                            }
+
+                            var vehicle =
+                                getCurrentVehicleData(
+                                    $form
+                                );
+
+                            var formShownData = {
+                                formType:
+                                    getDynamicFormType(),
+
+                                displayType:
+                                    displayType,
+
+                                events:
+                                    'formShown'
+                            };
+
+                            if (
+                                vehicle
+                            ) {
+                                formShownData
+                                    .formVehicle =
+                                    vehicle;
+                            }
+
+                            shownInPageForms.add(
+                                entry.target
+                            );
+
+                            observer.unobserve(
+                                entry.target
+                            );
+
+                            sd(
+                                'dataLayer',
+                                formShownData
+                            );
+
+                            sd('send');
+                        }
+                    );
+                },
+                {
+                    root:
+                        null,
+
+                    threshold:
+                        0.01
+                }
+            );
+
+        jQuery('.wpcf7').each(
             function () {
-                checkAndFireFormShown(
-                    0
-                );
-            },
-            delay
+                if (
+                    getDisplayType(
+                        this
+                    ) === 'in-page'
+                ) {
+                    observer.observe(
+                        this
+                    );
+                }
+            }
         );
 
         jQuery('body').on(
