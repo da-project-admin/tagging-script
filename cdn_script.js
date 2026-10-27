@@ -43,6 +43,9 @@
     var activeVehicleData = null;
     var formTypeCache = {};
 
+    var shownModalForms =
+        new WeakSet();
+
     var knownMakes = [
         "Polaris",
         "Yamaha",
@@ -1951,6 +1954,15 @@
                     );
 
                 if (
+                    displayType === 'modal' &&
+                    shownModalForms.has(
+                        this
+                    )
+                ) {
+                    return;
+                }
+
+                if (
                     clickIdCTA === 0 &&
                     displayType !==
                     'in-page'
@@ -2002,6 +2014,14 @@
                         vehicle;
                 }
 
+                if (
+                    displayType === 'modal'
+                ) {
+                    shownModalForms.add(
+                        this
+                    );
+                }
+
                 sd(
                     'dataLayer',
                     formShownData
@@ -2022,8 +2042,6 @@
 
         initFormShownTracking.initialized =
             true;
-
-        var delay = 400;
 
         var shownInPageForms =
             new WeakSet();
@@ -3018,6 +3036,31 @@
                 var form =
                     $form[0];
 
+                var displayType =
+                    getDisplayType(
+                        this
+                    );
+
+                if (
+                    displayType === 'modal' &&
+                    !shownModalForms.has(
+                        $wrapper[0]
+                    )
+                ) {
+                    var formId =
+                        $wrapper.attr(
+                            'data-wpcf7-id'
+                        );
+
+                    if (
+                        formId
+                    ) {
+                        checkAndFireFormShown(
+                            formId
+                        );
+                    }
+                }
+
                 var vehicle =
                     getCurrentVehicleData(
                         $wrapper
@@ -3038,9 +3081,7 @@
                         getDynamicFormType(),
 
                     displayType:
-                        getDisplayType(
-                            this
-                        )
+                        displayType
                 };
 
                 if (vehicle) {
@@ -3115,6 +3156,20 @@
                             .each(
                                 function () {
                                     initiatedForms
+                                        .delete(
+                                            this
+                                        );
+                                }
+                            );
+                        jQuery(
+                            ctaModal
+                        )
+                            .find(
+                                '.wpcf7'
+                            )
+                            .each(
+                                function () {
+                                    shownModalForms
                                         .delete(
                                             this
                                         );
