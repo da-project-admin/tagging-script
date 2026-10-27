@@ -991,7 +991,6 @@
 
             var genericRules = [
                 ['Showroom', /\bshowroom\b/],
-                ['Vehicle Listing', /\binventory\b/],
                 ['Finance', /\b(finance|financing|payment options)\b/],
                 ['Service', /\b(service|repairs|repair center|maintenance)\b/],
                 ['Parts', /\bparts\b/],
