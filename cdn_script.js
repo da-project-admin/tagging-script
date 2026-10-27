@@ -1299,27 +1299,210 @@
                                 .search
                         );
 
+                    var currentParamsValue =
+                        jQuery(
+                            '#current-params'
+                        )
+                            .first()
+                            .val() ||
+                        '';
+
+                    currentParamsValue =
+                        String(
+                            currentParamsValue
+                        )
+                            .replace(
+                                /&amp;/g,
+                                '&'
+                            )
+                            .replace(
+                                /^[?&]+/,
+                                ''
+                            );
+
+                    var currentParams =
+                        new URLSearchParams(
+                            currentParamsValue
+                        );
+
+                    function cleanParamValue(
+                        value
+                    ) {
+                        return String(
+                            value || ''
+                        )
+                            .trim()
+                            .replace(
+                                /^\|+|\|+$/g,
+                                ''
+                            );
+                    }
+
+                    function getActiveRangeValue(
+                        key
+                    ) {
+                        var keyMap = {
+                            min_year:
+                                'min-year',
+
+                            max_year:
+                                'max-year',
+
+                            min_price:
+                                'min-price',
+
+                            max_price:
+                                'max-price'
+                        };
+
+                        var inputName =
+                            keyMap[key] ||
+                            key;
+
+                        if (
+                            !/^(min|max)-(year|price)$/
+                                .test(
+                                    inputName
+                                )
+                        ) {
+                            return '';
+                        }
+
+                        var $input =
+                            jQuery(
+                                '#inventory-units-main-container ' +
+                                'input[name="' +
+                                inputName +
+                                '"]'
+                            )
+                                .first();
+
+                        if (
+                            !$input.length
+                        ) {
+                            return '';
+                        }
+
+                        var $filterBlock =
+                            $input.closest(
+                                '.inventory-search-units-block'
+                            );
+
+                        var isActive =
+                            $filterBlock
+                                .find(
+                                    '.inventory-search-title'
+                                )
+                                .hasClass(
+                                    'active-filter'
+                                );
+
+                        if (
+                            !isActive
+                        ) {
+                            return '';
+                        }
+
+                        return cleanParamValue(
+                            $input.val()
+                        );
+                    }
+
+                    function getCheckedValues(
+                        key
+                    ) {
+                        var values =
+                            [];
+
+                        jQuery(
+                            '#inventory-units-main-container ' +
+                            'input[name="' +
+                            key +
+                            '"]:checked'
+                        ).each(
+                            function () {
+                                var value =
+                                    cleanParamValue(
+                                        jQuery(this)
+                                            .val()
+                                    );
+
+                                if (
+                                    value &&
+                                    values.indexOf(
+                                        value
+                                    ) === -1
+                                ) {
+                                    values.push(
+                                        value
+                                    );
+                                }
+                            }
+                        );
+
+                        return values.join(
+                            '|'
+                        );
+                    }
+
+                    function getRawParam(
+                        key
+                    ) {
+                        var value =
+                            cleanParamValue(
+                                urlParams.get(
+                                    key
+                                )
+                            );
+
+                        if (value) {
+                            return value;
+                        }
+
+                        value =
+                            cleanParamValue(
+                                currentParams.get(
+                                    key
+                                )
+                            );
+
+                        if (value) {
+                            return value;
+                        }
+
+                        value =
+                            getCheckedValues(
+                                key
+                            );
+
+                        if (
+                            value
+                        ) {
+                            return value;
+                        }
+
+                        return getActiveRangeValue(
+                            key
+                        );
+                    }
+
                     function getParam(
                         key,
                         defaultValue
                     ) {
-                        var val =
-                            urlParams.get(
+                        var value =
+                            getRawParam(
                                 key
                             );
 
-                        return (
-                            val &&
-                            val.trim() !==
-                            ''
-                        )
-                            ? decodeURIComponent(
-                                val
-                            )
-                            : (
-                                defaultValue ||
-                                'All'
-                            );
+                        if (value) {
+                            return value;
+                        }
+
+                        return defaultValue !==
+                            undefined
+                            ? defaultValue
+                            : 'All';
                     }
 
                     var searchResultsCount =
@@ -1355,14 +1538,17 @@
                     var maxPrice;
 
                     var priceParam =
-                        urlParams.get(
+                        getRawParam(
                             'price'
                         );
 
-                    if (priceParam) {
+                    if (
+                        priceParam
+                    ) {
                         var parts =
-                            priceParam
-                                .split('-');
+                            priceParam.split(
+                                '-'
+                            );
 
                         if (
                             parts[0] &&
@@ -1388,116 +1574,102 @@
                                 );
                         }
                     } else {
-                        if (
-                            urlParams.get(
+                        var minPriceParam =
+                            getRawParam(
                                 'min_price'
-                            ) &&
+                            ) ||
+                            getRawParam(
+                                'min-price'
+                            );
+
+                        var maxPriceParam =
+                            getRawParam(
+                                'max_price'
+                            ) ||
+                            getRawParam(
+                                'max-price'
+                            );
+
+                        if (
+                            minPriceParam &&
                             !isNaN(
-                                urlParams.get(
-                                    'min_price'
-                                )
+                                minPriceParam
                             )
                         ) {
                             minPrice =
                                 Number(
-                                    urlParams.get(
-                                        'min_price'
-                                    )
+                                    minPriceParam
                                 );
                         }
 
                         if (
-                            urlParams.get(
-                                'max_price'
-                            ) &&
+                            maxPriceParam &&
                             !isNaN(
-                                urlParams.get(
-                                    'max_price'
-                                )
+                                maxPriceParam
                             )
                         ) {
                             maxPrice =
                                 Number(
-                                    urlParams.get(
-                                        'max_price'
-                                    )
+                                    maxPriceParam
                                 );
                         }
                     }
 
                     var yearsVal =
-                        getParam(
-                            'years',
-                            getParam(
-                                'year',
-                                'All'
-                            )
+                        getRawParam(
+                            'years'
+                        ) ||
+                        getRawParam(
+                            'year'
                         );
 
                     if (
-                        yearsVal !==
-                        'All' &&
-                        yearsVal.indexOf(
-                            '-'
-                        ) > -1
+                        !yearsVal
                     ) {
-                        var yearParts =
-                            yearsVal.split(
-                                '-'
+                        var minYearParam =
+                            getRawParam(
+                                'min-year'
+                            ) ||
+                            getRawParam(
+                                'min_year'
                             );
 
-                        var startYear =
-                            parseInt(
-                                yearParts[0],
-                                10
-                            );
-
-                        var endYear =
-                            parseInt(
-                                yearParts[1],
-                                10
+                        var maxYearParam =
+                            getRawParam(
+                                'max-year'
+                            ) ||
+                            getRawParam(
+                                'max_year'
                             );
 
                         if (
-                            !isNaN(
-                                startYear
-                            ) &&
-                            !isNaN(
-                                endYear
-                            ) &&
-                            startYear <=
-                            endYear
+                            minYearParam &&
+                            maxYearParam
                         ) {
-                            var expandedYears =
-                                [];
-
-                            for (
-                                var y =
-                                    startYear;
-                                y <=
-                                endYear;
-                                y++
-                            ) {
-                                expandedYears.push(
-                                    y
-                                );
-                            }
-
                             yearsVal =
-                                expandedYears.join(
-                                    '|'
-                                );
+                                minYearParam ===
+                                    maxYearParam
+                                    ? minYearParam
+                                    : minYearParam +
+                                    '-' +
+                                    maxYearParam;
                         }
+                    }
+
+                    if (
+                        !yearsVal
+                    ) {
+                        yearsVal =
+                            'All';
                     }
 
                     function getConditionFromURL() {
                         var statusParam =
-                            decodeURIComponent(
-                                getParam(
-                                    'condition',
-                                    ''
-                                )
+                            getParam(
+                                'condition',
+                                ''
                             );
+
 
                         if (
                             statusParam &&
@@ -1557,9 +1729,7 @@
                             status:
                                 (function () {
                                     var status =
-                                        decodeURIComponent(
-                                            getConditionFromURL()
-                                        );
+                                        getConditionFromURL();
 
                                     var conditions =
                                         status
@@ -1616,10 +1786,7 @@
                             driveTerrain:
                                 getParam(
                                     'driveTerrain',
-                                    getParam(
-                                        'driveTerrain',
-                                        'All'
-                                    )
+                                    'All'
                                 ),
 
                             bodyStyle:
