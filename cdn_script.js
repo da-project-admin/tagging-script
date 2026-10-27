@@ -974,8 +974,6 @@
                 ['DriverGear', /\bdriver ?gear\b/],
                 ['Brochure', /\b(brochure|e brochure|download catalog|download catalogue)\b/],
                 ['Finance', /\b(finance application|financing application|apply for financing|apply for credit|finance center|financing center)\b/],
-                ['Vehicle Details', /\b(vehicle details|unit details|inventory details)\b/],
-                ['Vehicle Listing', /\b(new inventory|used inventory|pre owned inventory|all inventory|inventory search|view inventory|search inventory|vehicles for sale|units for sale)\b/],
                 ['Contact Us', /\b(contact us|contact the dealer|contact dealership|get in touch)\b/],
                 ['About Us', /\b(about us|our dealership|meet our team|our story|who we are)\b/],
                 ['Blog', /\b(blog|news and insights|news articles|latest news)\b/],
