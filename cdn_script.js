@@ -2160,16 +2160,58 @@
                         )
                         : null;
 
-                setTimeout(
-                    function () {
-                        checkAndFireFormShown(
-                            formId
-                        );
-                    },
-                    delay
-                );
+                if (
+                    formId === null
+                ) {
+                    return;
+                }
+
+                var attempts =
+                    0;
+
+                var maxAttempts =
+                    20;
+
+                var findModalFormInterval =
+                    setInterval(
+                        function () {
+                            attempts++;
+
+                            var $form =
+                                jQuery(
+                                    '.wpcf7[data-wpcf7-id="' +
+                                    formId +
+                                    '"]:visible'
+                                );
+
+                            if (
+                                $form.length
+                            ) {
+                                clearInterval(
+                                    findModalFormInterval
+                                );
+
+                                checkAndFireFormShown(
+                                    formId
+                                );
+
+                                return;
+                            }
+
+                            if (
+                                attempts >=
+                                maxAttempts
+                            ) {
+                                clearInterval(
+                                    findModalFormInterval
+                                );
+                            }
+                        },
+                        20
+                    );
             }
         );
+
     }
 
     function initSearchTracking() {
