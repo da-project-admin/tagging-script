@@ -301,9 +301,19 @@
     var numericValuePattern = /[^0-9.]/g;
     var whitespacePattern = /\s+/g;
 
-    function getDynamicFormType() {
-        var currentFormTypeDataAttribute = jQuery('[form-name]').last().attr('form-name');
-        return currentFormTypeDataAttribute || 'Other';
+    function getDynamicFormType(formElement) {
+        var $context = formElement ? jQuery(formElement) : jQuery();
+        var $typeElement = $context.find('[form-name]').first();
+
+        if (!$typeElement.length) {
+            $typeElement = $context.closest('[form-name]');
+        }
+
+        if (!$typeElement.length && !$context.length) {
+            $typeElement = jQuery('[form-name]').last();
+        }
+
+        return String($typeElement.attr('form-name') || 'Other').trim() || 'Other';
     }
 
     function buildVehicleDataFromFormInputs(formElement) {
@@ -515,6 +525,12 @@
             vData.fuelType = normalizeFuelType(vData.fuelType);
 
             return vData;
+        }
+
+        // Trade-in year/make/model belong to the top-level tradeIn object.
+        // Only explicitly tagged data-form-vehicle fields may produce formVehicle.
+        if (getDynamicFormType(formElement) === 'Trade In') {
+            return null;
         }
 
         var formSpecs = {};
@@ -2252,7 +2268,7 @@
 
                 var formShownData = {
                     formType:
-                        getDynamicFormType(),
+                        getDynamicFormType($form),
 
                     displayType:
                         displayType,
@@ -2347,7 +2363,7 @@
 
                             var formShownData = {
                                 formType:
-                                    getDynamicFormType(),
+                                    getDynamicFormType($form),
 
                                 displayType:
                                     displayType,
@@ -3331,7 +3347,7 @@
                             'id'
                         )
                         ] ||
-                        getDynamicFormType(),
+                        getDynamicFormType($form),
 
                     displayType:
                         displayType
@@ -3482,43 +3498,39 @@
                     .first();
         }
 
-        function getTradeInValue(
-            $form,
-            field
-        ) {
-            var $element =
-                $form
-                    .find(
-                        '[data-trade-in="' +
-                        field +
-                        '"]'
-                    )
-                    .first();
+        function getTradeInValue($form, field, submittedInputs) {
+            var $container = $form.find('[data-trade-in="' + field + '"]').first();
 
-            if (
-                !$element.is(
-                    'input, select, textarea'
-                )
-            ) {
-                $element =
-                    $element
-                        .find(
-                            'input, select, textarea'
-                        )
-                        .first();
+            if (!$container.length) {
+                return '';
             }
 
-            return String(
-                $element.val() ||
-                ''
-            ).trim();
+            var $input = $container.is('input, select, textarea')
+                ? $container
+                : $container.find('input, select, textarea').first();
+
+            if (!$input.length) {
+                return '';
+            }
+
+            var inputName = $input.attr('name');
+            var inputs = Array.isArray(submittedInputs) ? submittedInputs : [];
+
+            for (var i = 0; i < inputs.length; i++) {
+                if (inputs[i].name === inputName) {
+                    return String(inputs[i].value || '').trim();
+                }
+            }
+
+            return String($input.val() || '').trim();
         }
 
         function trackFormEvent(
             element,
             eventType,
             errorMessage,
-            deduplicate
+            deduplicate,
+            submittedInputs
         ) {
             var $form =
                 getForm(
@@ -3577,14 +3589,14 @@
                         'id'
                     );
 
-            var formType =
-                formTypeCache[
-                formId
-                ] ||
-                formTypeCache[
-                wrapperId
-                ] ||
-                getDynamicFormType();
+            var explicitFormType = getDynamicFormType($form);
+            var formType = explicitFormType !== 'Other'
+                ? explicitFormType
+                : (
+                    formTypeCache[formId] ||
+                    formTypeCache[wrapperId] ||
+                    'Other'
+                );
 
             var vehicle =
                 getCurrentVehicleData(
@@ -3640,38 +3652,14 @@
             }
 
             if (
-                !isError &&
-                formType.includes(
-                    'Trade In'
-                )
+                eventType === 'formSubmission' &&
+                formType === 'Trade In'
             ) {
-                data.tradeIn =
-                    {};
-
-                [
-                    'year',
-                    'make',
-                    'model'
-                ].forEach(
-                    function (
-                        field
-                    ) {
-                        data.tradeIn[
-                            field
-                        ] =
-                            getTradeInValue(
-                                $form,
-                                field
-                            ) ||
-                            (
-                                vehicle &&
-                                vehicle[
-                                field
-                                ]
-                            ) ||
-                            '';
-                    }
-                );
+                data.tradeIn = {
+                    year: getTradeInValue($form, 'year', submittedInputs),
+                    make: getTradeInValue($form, 'make', submittedInputs),
+                    model: getTradeInValue($form, 'model', submittedInputs)
+                };
             }
 
             sd(
@@ -3775,7 +3763,12 @@
             function (event) {
                 trackFormEvent(
                     event.target,
-                    'formSubmission'
+                    'formSubmission',
+                    null,
+                    undefined,
+                    event.detail && Array.isArray(event.detail.inputs)
+                        ? event.detail.inputs
+                        : []
                 );
             }
         );
