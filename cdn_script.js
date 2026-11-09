@@ -2086,8 +2086,9 @@
                         var fuelType = normalizeFuelType(rawFuelType, '');
 
                         activeVehicleData = {
+
                             status:
-                                status,
+                                status || specs['condition'] || '',
 
                             year:
                                 year,
