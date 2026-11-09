@@ -2503,7 +2503,7 @@
 
     function initSearchTracking() {
         var selector =
-            '.inventory-search-input, input[name="sortSearch"]';
+            '.inventory-search-input, input[name="sortSearch"], .custom-search-input, #searchform-dropdown input[name="s"]';
 
         var lastSearchTime =
             0;
