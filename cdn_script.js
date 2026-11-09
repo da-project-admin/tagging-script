@@ -2014,10 +2014,10 @@
                                 .trim() ||
                             '';
 
-                        var status =
-                            getVehicleStatus(
-                                titleText
-                            );
+                        var status = getVehicleStatus(titleText);
+                        if (!status) {
+                            status = getVehicleStatus(specs['condition']);
+                        }
 
                         var msrp =
                             $card
@@ -2088,7 +2088,7 @@
                         activeVehicleData = {
 
                             status:
-                                status || specs['condition'] || '',
+                                status,
 
                             year:
                                 year,
