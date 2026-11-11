@@ -2014,11 +2014,6 @@
                                 .trim() ||
                             '';
 
-                        var status = getVehicleStatus(titleText);
-                        if (!status) {
-                            status = getVehicleStatus(specs['condition']);
-                        }
-
                         var msrp =
                             $card
                                 .find(
@@ -2077,6 +2072,12 @@
                                         val;
                                 }
                             );
+
+                        var status = getVehicleStatus(
+                            [specs['condition'], specs['status'], titleText]
+                                .filter(Boolean)
+                                .join(' ')
+                        );
 
                         var rawFuelType =
                             specs['fuel type'] ||
